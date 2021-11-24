@@ -39,7 +39,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.patches import Circle
 
-from keras_model import read_model
+from .keras_model import read_model
 
 NumDots = 4
 NumConvMax = 8
