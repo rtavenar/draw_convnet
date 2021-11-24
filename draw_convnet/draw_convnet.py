@@ -34,9 +34,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 plt.rcdefaults()
+import matplotlib
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.patches import Circle
+
+from keras_model import read_model
 
 NumDots = 4
 NumConvMax = 8
@@ -137,96 +140,91 @@ def add_mapping(patches, colors, start_ratio, end_ratio, patch_size, ind_bgn,
 
 
 def label(xy, text, xy_off=[0, 4]):
-    plt.text(xy[0] + xy_off[0], xy[1] + xy_off[1], text,
-             family='sans-serif', size=8)
+    plt.text(xy[0] + xy_off[0], xy[1] + xy_off[1], text)
 
 
-if __name__ == '__main__':
-
+def plot_keras_convnet(model, font_size=8, to_file=None, flag_omit=True):
     fc_unit_size = 2
-    layer_width = 40
-    flag_omit = True
 
     patches = []
     colors = []
 
+    font = {'size': font_size}
+    matplotlib.rc('font', **font)
     fig, ax = plt.subplots()
-
-
-    ############################
-    # conv layers
-    size_list = [(32, 32), (18, 18), (10, 10), (6, 6), (4, 4)]
-    num_list = [3, 32, 32, 48, 48]
-    x_diff_list = [0, layer_width, layer_width, layer_width, layer_width]
-    text_list = ['Inputs'] + ['Feature\nmaps'] * (len(size_list) - 1)
-    loc_diff_list = [[3, -3]] * len(size_list)
-
-    num_show_list = list(map(min, num_list, [NumConvMax] * len(num_list)))
-    top_left_list = np.c_[np.cumsum(x_diff_list), np.zeros(len(x_diff_list))]
-
-    for ind in range(len(size_list)-1,-1,-1):
-        if flag_omit:
-            add_layer_with_omission(patches, colors, size=size_list[ind],
-                                    num=num_list[ind],
-                                    num_max=NumConvMax,
-                                    num_dots=NumDots,
-                                    top_left=top_left_list[ind],
-                                    loc_diff=loc_diff_list[ind])
+    
+    model_info = read_model(model)
+    layer_width = model_info["input_shape"][0] * 2
+    # 1. Input image
+    if flag_omit:
+        add_layer_with_omission(patches, colors, size=model_info["input_shape"][:-1],
+                                num=model_info["input_shape"][-1],
+                                num_max=NumConvMax,
+                                num_dots=NumDots,
+                                top_left=[0, 0],
+                                loc_diff=[3, -3])
+    else:
+        add_layer(patches, colors, 
+                  size=model_info["input_shape"][:-1],
+                  num=model_info["input_shape"][-1],
+                  top_left=[0, 0], loc_diff=[3, -3])
+    label([0, 0], "Inputs\n{}@{}x{}".format(model_info["input_shape"][2], 
+                                            model_info["input_shape"][0],
+                                            model_info["input_shape"][1]))
+    
+    # 2. Layers
+    for idx, (layer_below_text, output_shape, patch_size) in enumerate(model_info["layers"]):
+        if len(output_shape) == 3:
+            size = output_shape[:-1]
         else:
-            add_layer(patches, colors, size=size_list[ind],
-                      num=num_show_list[ind],
-                      top_left=top_left_list[ind], loc_diff=loc_diff_list[ind])
-        label(top_left_list[ind], text_list[ind] + '\n{}@{}x{}'.format(
-            num_list[ind], size_list[ind][0], size_list[ind][1]))
-
-    ############################
-    # in between layers
-    start_ratio_list = [[0.4, 0.5], [0.4, 0.8], [0.4, 0.5], [0.4, 0.8]]
-    end_ratio_list = [[0.4, 0.5], [0.4, 0.8], [0.4, 0.5], [0.4, 0.8]]
-    patch_size_list = [(5, 5), (2, 2), (5, 5), (2, 2)]
-    ind_bgn_list = range(len(patch_size_list))
-    text_list = ['Convolution', 'Max-pooling', 'Convolution', 'Max-pooling']
-
-    for ind in range(len(patch_size_list)):
-        add_mapping(
-            patches, colors, start_ratio_list[ind], end_ratio_list[ind],
-            patch_size_list[ind], ind,
-            top_left_list, loc_diff_list, num_show_list, size_list)
-        label(top_left_list[ind], text_list[ind] + '\n{}x{} kernel'.format(
-            patch_size_list[ind][0], patch_size_list[ind][1]), xy_off=[26, -65]
-        )
-
-
-    ############################
-    # fully connected layers
-    size_list = [(fc_unit_size, fc_unit_size)] * 3
-    num_list = [768, 500, 2]
-    num_show_list = list(map(min, num_list, [NumFcMax] * len(num_list)))
-    x_diff_list = [sum(x_diff_list) + layer_width, layer_width, layer_width]
-    top_left_list = np.c_[np.cumsum(x_diff_list), np.zeros(len(x_diff_list))]
-    loc_diff_list = [[fc_unit_size, -fc_unit_size]] * len(top_left_list)
-    text_list = ['Hidden\nunits'] * (len(size_list) - 1) + ['Outputs']
-
-    for ind in range(len(size_list)):
+            size = (fc_unit_size, fc_unit_size)
+        n_maps = output_shape[-1]
+        top_left = [(idx + 1) * layer_width, 0]
+        
         if flag_omit:
-            add_layer_with_omission(patches, colors, size=size_list[ind],
-                                    num=num_list[ind],
-                                    num_max=NumFcMax,
-                                    num_dots=NumDots,
-                                    top_left=top_left_list[ind],
-                                    loc_diff=loc_diff_list[ind])
+            add_layer_with_omission(patches, colors, size=size, num=n_maps,
+                                    num_max=NumConvMax, num_dots=NumDots,
+                                    top_left=top_left,
+                                    loc_diff=[3, -3])
         else:
-            add_layer(patches, colors, size=size_list[ind],
-                      num=num_show_list[ind],
-                      top_left=top_left_list[ind],
-                      loc_diff=loc_diff_list[ind])
-        label(top_left_list[ind], text_list[ind] + '\n{}'.format(
-            num_list[ind]))
-
-    text_list = ['Flatten\n', 'Fully\nconnected', 'Fully\nconnected']
-
-    for ind in range(len(size_list)):
-        label(top_left_list[ind], text_list[ind], xy_off=[-10, -65])
+            add_layer(patches, colors, size=size, num=n_maps,
+                      top_left=top_left,
+                      loc_diff=[3, -3])
+        if idx == len(model_info["layers"]) - 1:
+            label_upper_text = "Outputs"
+            if len(output_shape) == 3:
+                label_upper_text += '\n{}@{}x{}'.format(
+                    output_shape[2],
+                    output_shape[0],
+                    output_shape[1])
+            else:
+                label_upper_text += '\n{}'.format(output_shape[0])
+        elif len(output_shape) == 3:
+            label_upper_text = 'Feature\nmaps\n{}@{}x{}'.format(
+                output_shape[2],
+                output_shape[0],
+                output_shape[1])
+        else:
+            label_upper_text ='Hidden\nunits\n{}'.format(output_shape[0])
+            
+        label(top_left, label_upper_text)
+        
+        # In-between layers
+        start_ratio = [0.4, 0.5] if idx % 2 == 0 else [0.4, 0.8]
+        end_ratio = start_ratio
+        if layer_below_text.startswith("Convolution") or layer_below_text.startswith("Max-Pooling") or \
+                layer_below_text.startswith("Avg-Pooling"):
+            prev_shape = model_info["layers"][idx - 1][1] if idx > 0 else model_info["input_shape"]
+            prev_size = prev_shape[:-1]
+            if flag_omit:
+                n_shown_prev = min(prev_shape[-1], NumConvMax)
+                n_shown = min(output_shape[2], NumConvMax)
+            add_mapping(patches, colors, start_ratio, end_ratio,
+                        patch_size, 0,
+                        [[top_left[0] - layer_width, 0], top_left], 
+                        [[3, -3]] * 2, [n_shown_prev, n_shown], [prev_size, size])
+        label(top_left, layer_below_text, 
+                xy_off=[-layer_width // 2, - int(1.2 * layer_width)])
 
     ############################
     for patch, color in zip(patches, colors):
@@ -237,13 +235,11 @@ if __name__ == '__main__':
             patch.set_edgecolor(Black * np.ones(3))
             ax.add_patch(patch)
 
-    plt.tight_layout()
     plt.axis('equal')
     plt.axis('off')
-    plt.show()
     fig.set_size_inches(8, 2.5)
+    
+    if to_file is not None:
+        fig.savefig(to_file, bbox_inches='tight', pad_inches=0)
 
-    fig_dir = './'
-    fig_ext = '.png'
-    fig.savefig(os.path.join(fig_dir, 'convnet_fig' + fig_ext),
-                bbox_inches='tight', pad_inches=0)
+
