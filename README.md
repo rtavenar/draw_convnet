@@ -8,11 +8,11 @@ At the moment, the code can only deal with `Sequential` models with the followin
 
 | `keras`       | `pytorch`   |
 |---------------|-------------|
-| `InputLayer`, |             |
-| `Conv2D`,     | `Conv2d`    |
-| `MaxPool2D`,  | `MaxPool2d` |
-| `AvgPool2D`,  | `AvgPool2d` |
-| `Flatten`,    | `Flatten`,  |
+| `InputLayer`  |             |
+| `Conv2D`      | `Conv2d`    |
+| `MaxPool2D`   | `MaxPool2d` |
+| `AvgPool2D`   | `AvgPool2d` |
+| `Flatten`     | `Flatten`   |
 | `Dense`       | `Linear`    |
 
 
