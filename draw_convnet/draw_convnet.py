@@ -39,7 +39,6 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
 from matplotlib.patches import Circle
 
-from .keras_model import read_model
 
 NumDots = 4
 NumConvMax = 8
@@ -143,7 +142,7 @@ def label(xy, text, xy_off=[0, 4]):
     plt.text(xy[0] + xy_off[0], xy[1] + xy_off[1], text)
 
 
-def plot_keras_convnet(model, font_size=8, to_file=None, flag_omit=True):
+def plot_convnet(model_info, font_size=8, to_file=None, flag_omit=True):
     fc_unit_size = 2
 
     patches = []
@@ -153,7 +152,6 @@ def plot_keras_convnet(model, font_size=8, to_file=None, flag_omit=True):
     matplotlib.rc('font', **font)
     fig, ax = plt.subplots()
     
-    model_info = read_model(model)
     layer_width = model_info["input_shape"][0] * 2
     # 1. Input image
     if flag_omit:
@@ -243,3 +241,13 @@ def plot_keras_convnet(model, font_size=8, to_file=None, flag_omit=True):
         fig.savefig(to_file, bbox_inches='tight', pad_inches=0)
 
 
+def plot_keras_convnet(input_image, model, font_size=8, to_file=None, flag_omit=True):
+    from .keras_model import read_model
+    model_info = read_model(input_image, model)
+    plot_convnet(model_info, font_size=font_size, to_file=to_file, flag_omit=flag_omit)
+
+
+def plot_pytorch_convnet(input_image, model, font_size=8, to_file=None, flag_omit=True):
+    from .pytorch_model import read_model
+    model_info = read_model(input_image, model)
+    plot_convnet(model_info, font_size=font_size, to_file=to_file, flag_omit=flag_omit)

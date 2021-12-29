@@ -1,1 +1,2 @@
 from .draw_convnet import plot_keras_convnet
+from .draw_convnet import plot_pytorch_convnet
