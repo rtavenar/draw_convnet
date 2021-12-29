@@ -2,7 +2,20 @@
 
 ## History
 
-Python script for illustrating Convolutional Neural Network (ConvNet).
+Python script for illustrating Convolutional Neural Network (ConvNet)
+for `keras` and `pytorch` models.
+At the moment, the code can only deal with `Sequential` models with the following layers:
+
+| `keras`       | `pytorch`   |
+|---------------|-------------|
+| `InputLayer`, |             |
+| `Conv2D`,     | `Conv2d`    |
+| `MaxPool2D`,  | `MaxPool2d` |
+| `AvgPool2D`,  | `AvgPool2d` |
+| `Flatten`,    | `Flatten`,  |
+| `Dense`       | `Linear`    |
+
+
 This is based on <https://github.com/gwding/draw_convnet>, whose statement about using / citing the code is:
 
 > It is NOT required to cite anything to use the code.
@@ -13,13 +26,12 @@ This is based on <https://github.com/gwding/draw_convnet>, whose statement about
 
 ## Plotting `keras` models
 
-This fork allows to generate diagrams for `keras` sequential models, as follows:
-
 ```python
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import InputLayer, Conv2D, MaxPool2D, AvgPool2D, Flatten, Dense
+
+input_image = InputLayer((32, 32, 3))
 model = Sequential([
-    InputLayer(input_shape=(32, 32, 3)),
     Conv2D(filters=32, kernel_size=3, padding="valid"),
     MaxPool2D(pool_size=2),
     Conv2D(filters=32, kernel_size=5, padding="same"),
@@ -28,23 +40,42 @@ model = Sequential([
     Dense(units=124),
     Dense(units=10)
 ])
-plot_keras_convnet(model, font_size=6)
+plot_keras_convnet(input_image, model, font_size=6)
 plt.show()  # Not required in notebooks
 ```
 
 Alternatively, if the goal is to save the model diagram to a file, the last lines of the previous code would become:
 
 ```python
-plot_keras_convnet(model, font_size=6, to_file="convnet_keras.svg")
+plot_keras_convnet(input_image, model, font_size=6, to_file="convnet_keras.svg")
 ```
 
-At the moment, the code can only deal with `Sequential` models with the following layers:
-* `InputLayer`, 
-* `Conv2D`, 
-* `MaxPool2D`, 
-* `AvgPool2D`, 
-* `Flatten`, 
-* `Dense`
+## Plotting `pytorch` models
+
+```python
+from pprint import pprint
+import torch
+import torch.nn as nn
+
+input_image = torch.randn(3, 32, 32)  # (C, H, W)
+model = nn.Sequential(
+    nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding="valid"),
+    nn.MaxPool2d(kernel_size=2),
+    nn.Conv2d(in_channels=32, out_channels=32, kernel_size=5, padding="same"),
+    nn.AvgPool2d(kernel_size=(2)),
+    nn.Flatten(),  # if image shape==(3, 32, 32), Flatten gives (1, 1568)
+    nn.Linear(in_features=1568, out_features=124),
+    nn.Linear(in_features=124, out_features=10),
+)
+plot_pytorch_convnet(input_image, model, font_size=6)
+plt.show()  # Not required in notebooks
+```
+
+Alternatively, if the goal is to save the model diagram to a file, the last lines of the previous code would become:
+
+```python
+plot_pytorch_convnet(input_image, model, font_size=6, to_file="convnet_pytorch.svg")
+```
 
 ## Installation
 
