@@ -1,11 +1,14 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 from numpy.lib.arraysetops import isin
 from tensorflow.keras.layers import Dense, Flatten, Conv2D, MaxPool2D, AvgPool2D
 
-def read_model(keras_model):
+def read_model(input_image, keras_model):
     """Assumes the model is made of input, conv2d, maxpool2d, avgpool2d
     flatten and dense layers only."""
     model_description = {}
-    model_description["input_shape"] = keras_model.input_shape[1:]
+    model_description["input_shape"] = input_image.input_shape[0][1:]
     model_description["layers"] = []
     for layer in keras_model.layers:
         output_shape = layer.output_shape[1:]
@@ -34,8 +37,10 @@ if __name__ == "__main__":
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import InputLayer
     from pprint import pprint
+
+    input_image = InputLayer((32, 32, 3))
     model = Sequential([
-        InputLayer(input_shape=(32, 32, 3)),
+        input_image,
         Conv2D(filters=32, kernel_size=3, padding="valid"),
         MaxPool2D(pool_size=2),
         Conv2D(filters=32, kernel_size=5, padding="same"),
@@ -44,4 +49,4 @@ if __name__ == "__main__":
         Dense(units=124),
         Dense(units=10)
     ])
-    pprint(read_model(model))
+    pprint(read_model(input_image, model))
